@@ -3,5 +3,9 @@
 
     <string name="app_name">Windrose</string>
     <string name="action_settings">Settings</string>
+    <string name="longitude">Longitude</string>
+    <string name="latitude">Latitude</string>
+    <string name="compassDescription">Compass</string>
+    <string name="go">Go!</string>
 
 </resources>

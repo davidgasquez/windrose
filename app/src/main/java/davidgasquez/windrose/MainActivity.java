@@ -1,10 +1,14 @@
 package davidgasquez.windrose;
 
 import android.app.Activity;
+import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -17,9 +21,20 @@ import android.widget.TextView;
 public class MainActivity extends Activity implements SensorEventListener {
 
     TextView northDirection;
+    TextView latitudeText;
+    TextView longitudeText;
+
+    double latitude;
+    double longitude;
+
     private ImageView image;
-    private float currentDegree = 0f;
+
+    private float currentDegree = 0.0f;
+    private float lastDegree = 0.0f;
+
     private SensorManager mSensorManager;
+    private LocationManager locationManager;
+    private LocationListener locationListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,8 +42,13 @@ public class MainActivity extends Activity implements SensorEventListener {
         setContentView(R.layout.activity_main);
 
         image = (ImageView) findViewById(R.id.imageViewCompass);
+
         northDirection = (TextView) findViewById(R.id.northDirection);
+        latitudeText = (TextView) findViewById(R.id.latitudeText);
+        longitudeText = (TextView) findViewById(R.id.longitudeText);
+
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     }
 
     @Override
@@ -39,7 +59,6 @@ public class MainActivity extends Activity implements SensorEventListener {
                 SensorManager.SENSOR_DELAY_GAME);
     }
 
-
     @Override
     protected void onPause() {
         super.onPause();
@@ -47,40 +66,21 @@ public class MainActivity extends Activity implements SensorEventListener {
         mSensorManager.unregisterListener(this);
     }
 
-    /**
-     * Called when sensor values have changed.
-     * <p>See {@link android.hardware.SensorManager SensorManager}
-     * for details on possible sensor types.
-     * <p>See also {@link android.hardware.SensorEvent SensorEvent}.
-     * <p/>
-     * <p><b>NOTE:</b> The application doesn't own the
-     * {@link android.hardware.SensorEvent event}
-     * object passed as a parameter and therefore cannot hold on to it.
-     * The object may be part of an internal pool and may be reused by
-     * the framework.
-     *
-     * @param event the {@link android.hardware.SensorEvent SensorEvent}.
-     */
     @Override
     public void onSensorChanged(SensorEvent event) {
-        // get the angle around the z-axis rotated
-        float objetiveDegree = Math.round(event.values[0]);
 
-        northDirection.setText("objetiveDegree" + Float.toString(objetiveDegree)
-                + "\ncurrentDegree" + Float.toString(currentDegree)
-                + "\nabs" + Float.toString(Math.abs(objetiveDegree + currentDegree)));
+        lastDegree = Math.round(event.values[0]);
 
-        //if (objetiveDegree > 0 && objetiveDegree < 180) {
-        //    northDirection.setText("Turn left");
-        //}
-        //else {
-        //    northDirection.setText("Turn right");
-        //}
+        if (lastDegree > 0 && lastDegree < 180) {
+            northDirection.setText("Turn left");
+        } else {
+            northDirection.setText("Turn right");
+        }
 
         RotateAnimation rotation;
         rotation = new RotateAnimation(
                 currentDegree,
-                -objetiveDegree,
+                -lastDegree,
                 Animation.RELATIVE_TO_SELF, 0.5f,
                 Animation.RELATIVE_TO_SELF, 0.5f);
 
@@ -88,8 +88,49 @@ public class MainActivity extends Activity implements SensorEventListener {
         rotation.setFillAfter(true);
 
         image.startAnimation(rotation);
-        currentDegree = -objetiveDegree;
+        currentDegree = -lastDegree;
 
+        updateCoordinates();
+
+    }
+
+    private void updateCoordinates() {
+        locationListener = new LocationListener() {
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+            }
+
+            @Override
+            public void onLocationChanged(Location location) {
+                location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+                latitude = location.getLatitude();
+                longitude = location.getLongitude();
+
+                if (latitude > 0) {
+                    latitudeText.setText(String.valueOf(latitude) + " N");
+                } else {
+                    latitudeText.setText(String.valueOf(-latitude) + " S");
+                }
+
+                if (longitude > 0) {
+                    longitudeText.setText(String.valueOf(longitude) + " E");
+                } else {
+                    longitudeText.setText(String.valueOf(-longitude) + " W");
+                }
+            }
+        };
+
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, locationListener);
     }
 
     /**
