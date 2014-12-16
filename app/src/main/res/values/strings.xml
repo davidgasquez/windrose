@@ -7,5 +7,6 @@
     <string name="latitude">Latitude</string>
     <string name="compassDescription">Compass</string>
     <string name="go">Go!</string>
+    <string name="Distance">Distance</string>
 
 </resources>

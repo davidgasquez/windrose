@@ -23,9 +23,12 @@ public class MainActivity extends Activity implements SensorEventListener {
     TextView northDirection;
     TextView latitudeText;
     TextView longitudeText;
+    TextView distanceText;
 
     double latitude;
     double longitude;
+
+    double distance;
 
     private ImageView image;
 
@@ -35,6 +38,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     private SensorManager mSensorManager;
     private LocationManager locationManager;
     private LocationListener locationListener;
+    private Location lastLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,9 +47,12 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         image = (ImageView) findViewById(R.id.imageViewCompass);
 
+        distance = 0;
+
         northDirection = (TextView) findViewById(R.id.northDirection);
         latitudeText = (TextView) findViewById(R.id.latitudeText);
         longitudeText = (TextView) findViewById(R.id.longitudeText);
+        distanceText = (TextView) findViewById(R.id.distanceText);
 
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -97,12 +104,16 @@ public class MainActivity extends Activity implements SensorEventListener {
     private void updateCoordinates() {
         locationListener = new LocationListener() {
 
+            int i = 0;
+
             @Override
             public void onStatusChanged(String provider, int status, Bundle extras) {
+                lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             }
 
             @Override
             public void onProviderEnabled(String provider) {
+                lastLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             }
 
             @Override
@@ -111,7 +122,15 @@ public class MainActivity extends Activity implements SensorEventListener {
 
             @Override
             public void onLocationChanged(Location location) {
+
+                if (i == 0) {
+                    lastLocation = location;
+                    i++;
+                }
+
                 location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                distance += location.distanceTo(lastLocation);
+                System.out.println(distance);
 
                 latitude = location.getLatitude();
                 longitude = location.getLongitude();
@@ -127,10 +146,16 @@ public class MainActivity extends Activity implements SensorEventListener {
                 } else {
                     longitudeText.setText(String.valueOf(-longitude) + " W");
                 }
+
+
+                lastLocation = location;
+
+                distanceText.setText(String.valueOf(distance + "meters"));
+
             }
         };
 
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0, locationListener);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 0, locationListener);
     }
 
     /**
