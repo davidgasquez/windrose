@@ -17,73 +17,110 @@ import android.view.animation.RotateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-
+/**
+ * MainActivity to handle sensors events
+ *
+ * @author David Gasquez
+ */
 public class MainActivity extends Activity implements SensorEventListener {
 
+    // TextViews
     TextView northDirection;
     TextView latitudeText;
     TextView longitudeText;
     TextView distanceText;
 
+    // Create longitude and latitude variables
     double latitude;
     double longitude;
 
+    // Create distance
     double distance;
 
+    // Initialize ImageView
     private ImageView image;
 
+    // Degrees
     private float currentDegree = 0.0f;
     private float lastDegree = 0.0f;
 
+    // Sensors and location
     private SensorManager mSensorManager;
     private LocationManager locationManager;
     private LocationListener locationListener;
     private Location lastLocation;
 
+    /**
+     * Main method called when the app is opened
+     *
+     * @return Nothing.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Set the view
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Fill the image with the compass
         image = (ImageView) findViewById(R.id.imageViewCompass);
 
+        // Initial distance is 0
         distance = 0;
 
+        // Set other texts
         northDirection = (TextView) findViewById(R.id.northDirection);
         latitudeText = (TextView) findViewById(R.id.latitudeText);
         longitudeText = (TextView) findViewById(R.id.longitudeText);
         distanceText = (TextView) findViewById(R.id.distanceText);
 
+        // Initialize sensors
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     }
 
+    /**
+     * Method called when the app resumes his activity
+     * @return Nothing.
+     */
     @Override
     protected void onResume() {
         super.onResume();
 
+        // Continue listening the orientation sensor
         mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_ORIENTATION),
                 SensorManager.SENSOR_DELAY_GAME);
     }
 
+    /**
+     * Method called when the app pauses his activity
+     * @return Nothing.
+     */
     @Override
     protected void onPause() {
         super.onPause();
 
+        // Stop listening the sensor
         mSensorManager.unregisterListener(this);
     }
 
+    /**
+     * Method called when the sensor status changes
+     * @return Nothing.
+     */
     @Override
     public void onSensorChanged(SensorEvent event) {
 
+        // Get the degree
         lastDegree = Math.round(event.values[0]);
 
+        // Say if we must turn left or right to go north
         if (lastDegree > 0 && lastDegree < 180) {
             northDirection.setText("Turn left");
         } else {
             northDirection.setText("Turn right");
         }
 
+        // Create and exetute rotation animation
         RotateAnimation rotation;
         rotation = new RotateAnimation(
                 currentDegree,
@@ -93,17 +130,25 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         rotation.setDuration(300);
         rotation.setFillAfter(true);
-
         image.startAnimation(rotation);
+
+        // Update current degree
         currentDegree = -lastDegree;
 
+        // Update GPS coordinates
         updateCoordinates();
 
     }
 
+    /**
+     * Update the GPS cordinates
+     * @return Nothing.
+     */
     private void updateCoordinates() {
+        // Make a location listener
         locationListener = new LocationListener() {
 
+            // Aux
             int i = 0;
 
             @Override
@@ -120,18 +165,27 @@ public class MainActivity extends Activity implements SensorEventListener {
             public void onProviderDisabled(String provider) {
             }
 
+            /**
+             * When user location change, we compute distances and update coordinates texts
+             * @return Nothing.
+             */
             @Override
             public void onLocationChanged(Location location) {
 
+                // First time we make lastLocation=location to later compute distances
                 if (i == 0) {
                     lastLocation = location;
                     i++;
                 }
 
+                // Get location from GPS
                 location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                distance += location.distanceTo(lastLocation);
-                System.out.println(distance);
 
+                // Compute distance to lastLocation
+                distance += location.distanceTo(lastLocation);
+                distanceText.setText(String.valueOf(distance + "meters"));
+
+                // Update and show location
                 latitude = location.getLatitude();
                 longitude = location.getLongitude();
 
@@ -147,14 +201,11 @@ public class MainActivity extends Activity implements SensorEventListener {
                     longitudeText.setText(String.valueOf(-longitude) + " W");
                 }
 
-
                 lastLocation = location;
-
-                distanceText.setText(String.valueOf(distance + "meters"));
-
             }
         };
 
+        // Ask GPS updates every 10000 ms
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 0, locationListener);
     }
 
