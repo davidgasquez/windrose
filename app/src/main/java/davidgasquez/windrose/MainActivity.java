@@ -25,17 +25,17 @@ import android.widget.TextView;
 public class MainActivity extends Activity implements SensorEventListener {
 
     // TextViews
-    TextView northDirection;
-    TextView latitudeText;
-    TextView longitudeText;
-    TextView distanceText;
+    private TextView northDirection;
+    private TextView latitudeText;
+    private TextView longitudeText;
+    private TextView distanceText;
 
     // Create longitude and latitude variables
-    double latitude;
-    double longitude;
+    private double latitude;
+    private double longitude;
 
     // Create distance
-    double distance;
+    private double distance;
 
     // Initialize ImageView
     private ImageView image;
@@ -52,8 +52,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     /**
      * Main method called when the app is opened
-     *
-     * @return Nothing.
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,7 +78,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     /**
      * Method called when the app resumes his activity
-     * @return Nothing.
      */
     @Override
     protected void onResume() {
@@ -93,7 +90,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     /**
      * Method called when the app pauses his activity
-     * @return Nothing.
      */
     @Override
     protected void onPause() {
@@ -105,7 +101,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     /**
      * Method called when the sensor status changes
-     * @return Nothing.
      */
     @Override
     public void onSensorChanged(SensorEvent event) {
@@ -142,7 +137,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     /**
      * Update the GPS cordinates
-     * @return Nothing.
      */
     private void updateCoordinates() {
         // Make a location listener
@@ -167,7 +161,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
             /**
              * When user location change, we compute distances and update coordinates texts
-             * @return Nothing.
              */
             @Override
             public void onLocationChanged(Location location) {
@@ -182,8 +175,10 @@ public class MainActivity extends Activity implements SensorEventListener {
                 location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
                 // Compute distance to lastLocation
-                distance += location.distanceTo(lastLocation);
-                distanceText.setText(String.valueOf(distance + "meters"));
+                if (location.distanceTo(lastLocation) > 15.0) {
+                    distance += location.distanceTo(lastLocation);
+                    distanceText.setText(String.valueOf(distance + " meters"));
+                }
 
                 // Update and show location
                 latitude = location.getLatitude();
@@ -201,7 +196,9 @@ public class MainActivity extends Activity implements SensorEventListener {
                     longitudeText.setText(String.valueOf(-longitude) + " W");
                 }
 
-                lastLocation = location;
+                if (location.distanceTo(lastLocation) > 15.0) {
+                    lastLocation = location;
+                }
             }
         };
 
